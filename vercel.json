@@ -2,7 +2,7 @@
   "version": 2,
   "framework": null,
   "functions": {
-    "api/index.php": {
+    "api/[...all].php": {
       "runtime": "vercel-php@0.7.2"
     }
   },
@@ -12,13 +12,13 @@
     { "source": "/images/:path*", "destination": "/public/images/:path*" },
     { "source": "/favicon.ico", "destination": "/public/favicon.ico" },
     { "source": "/robots.txt", "destination": "/public/robots.txt" },
-    { "source": "/api", "destination": "/api/index.php?__api_path=" },
-    { "source": "/api/:path*", "destination": "/api/index.php?__api_path=:path*" }
+    { "source": "/api/:path*", "destination": "/api/[...all].php" },
+    { "source": "/api", "destination": "/api/[...all].php" }
   ],
   "env": {
     "APP_ENV": "production",
     "APP_DEBUG": "false",
-    "APP_URL": "http://localhost:8000",
+    "APP_URL": "https://assman-backend.vercel.app/",
     "APP_KEY": "base64:k5Op3keMXfskcT368mtkSP7fMBSoMVS4BuCG1IM/+0g=",
     "APP_CONFIG_CACHE": "/tmp/config.php",
     "APP_EVENTS_CACHE": "/tmp/events.php",

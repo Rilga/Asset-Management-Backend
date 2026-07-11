@@ -15,6 +15,8 @@ if (isset($_GET['__api_path'])) {
     $_SERVER['PATH_INFO'] = $uri;
     $_SERVER['PHP_SELF'] = '/api/index.php';
     $_SERVER['SCRIPT_NAME'] = '/api/index.php';
+    $_SERVER['SCRIPT_FILENAME'] = __DIR__ . '/index.php';
+    $_SERVER['QUERY_STRING'] = '';
 }
 
 $app = require_once __DIR__ . '/../bootstrap/app.php';
