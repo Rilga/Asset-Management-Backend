@@ -11,7 +11,9 @@
     { "source": "/assets/:path*", "destination": "/public/assets/:path*" },
     { "source": "/images/:path*", "destination": "/public/images/:path*" },
     { "source": "/favicon.ico", "destination": "/public/favicon.ico" },
-    { "source": "/robots.txt", "destination": "/public/robots.txt" }
+    { "source": "/robots.txt", "destination": "/public/robots.txt" },
+    { "source": "/api", "destination": "/api/index.php" },
+    { "source": "/api/:path*", "destination": "/api/index.php" }
   ],
   "env": {
     "APP_ENV": "production",
