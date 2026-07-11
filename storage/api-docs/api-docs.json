@@ -1,0 +1,3183 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "AssetMind Backend API",
+        "description": "REST API untuk Sistem Pendukung Keputusan Perawatan Aset Industri Perkebunan Kelapa Sawit. Backend Laravel terintegrasi dengan AI Engine (FastAPI) untuk embedding, chatbot RAG, dan rekomendasi pemeliharaan.",
+        "contact": {
+            "name": "AssetMind",
+            "email": "firasyan.daffa123@gmail.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000",
+            "description": "Server lokal (Laravel artisan serve)"
+        }
+    ],
+    "paths": {
+        "/api/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login & terbitkan token Sanctum",
+                "description": "Autentikasi dengan username & password. Mengembalikan Personal Access Token (Bearer). Token lama otomatis dihapus.",
+                "operationId": "authLogin",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "username",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "username": {
+                                        "type": "string",
+                                        "example": "teknik_01"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login berhasil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login berhasil."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user": {
+                                                    "type": "string",
+                                                    "example": "Budi Teknik"
+                                                },
+                                                "role": {
+                                                    "type": "string",
+                                                    "example": "teknik"
+                                                },
+                                                "access_token": {
+                                                    "type": "string",
+                                                    "example": "1|abcdef..."
+                                                },
+                                                "token_type": {
+                                                    "type": "string",
+                                                    "example": "Bearer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Kredensial salah / validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/assets": {
+            "get": {
+                "tags": [
+                    "Assets"
+                ],
+                "summary": "List aset",
+                "operationId": "assetsIndex",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Assets"
+                ],
+                "summary": "Buat aset baru (teknik)",
+                "operationId": "assetsStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "kategori",
+                                    "nomor_peralatan",
+                                    "nama_mesin",
+                                    "area_mesin",
+                                    "maintenance_interval_hours"
+                                ],
+                                "properties": {
+                                    "kategori": {
+                                        "type": "string"
+                                    },
+                                    "nomor_peralatan": {
+                                        "type": "string"
+                                    },
+                                    "nama_mesin": {
+                                        "type": "string"
+                                    },
+                                    "area_mesin": {
+                                        "type": "string"
+                                    },
+                                    "merek": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "tahun_pembelian": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "maintenance_interval_hours": {
+                                        "type": "integer"
+                                    },
+                                    "foto_kondisi": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "manual_book": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/assets/{id}": {
+            "get": {
+                "tags": [
+                    "Assets"
+                ],
+                "summary": "Detail aset",
+                "operationId": "assetsShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail aset berhasil diambil"
+                    },
+                    "404": {
+                        "description": "Aset tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Assets"
+                ],
+                "summary": "Perbarui aset (khusus teknik)",
+                "description": "Memperbarui aset. Menggunakan multipart/form-data karena bisa mengunggah foto kondisi & manual book (PDF).",
+                "operationId": "assetsUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "kategori",
+                                    "nomor_peralatan",
+                                    "nama_mesin",
+                                    "area_mesin",
+                                    "maintenance_interval_hours"
+                                ],
+                                "properties": {
+                                    "kategori": {
+                                        "type": "string",
+                                        "example": "Mesin Produksi"
+                                    },
+                                    "nomor_peralatan": {
+                                        "type": "string",
+                                        "example": "P-10"
+                                    },
+                                    "nama_mesin": {
+                                        "type": "string",
+                                        "example": "Mesin Screw Press P-10"
+                                    },
+                                    "area_mesin": {
+                                        "type": "string",
+                                        "example": "Stasiun Press"
+                                    },
+                                    "merek": {
+                                        "type": "string",
+                                        "example": "Stork",
+                                        "nullable": true
+                                    },
+                                    "tahun_pembelian": {
+                                        "type": "integer",
+                                        "example": 2020,
+                                        "nullable": true
+                                    },
+                                    "maintenance_interval_hours": {
+                                        "type": "integer",
+                                        "example": 2000
+                                    },
+                                    "foto_kondisi": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "manual_book": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Data aset berhasil diperbarui"
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Assets"
+                ],
+                "summary": "Hapus aset (khusus teknik)",
+                "operationId": "assetsDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data aset berhasil dihapus",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Aset tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/assets/{asset}/qr-detail": {
+            "get": {
+                "tags": [
+                    "Assets"
+                ],
+                "summary": "Detail aset dari QR code (publik)",
+                "description": "Endpoint publik (tanpa autentikasi) yang ditautkan pada QR code aset. Mengembalikan profil aset + ringkasan jam operasi, histori pemeliharaan, dan histori perbaikan.",
+                "operationId": "assetsQrDetail",
+                "parameters": [
+                    {
+                        "name": "asset",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail aset dari QR code berhasil diambil"
+                    },
+                    "404": {
+                        "description": "Aset tidak ditemukan"
+                    }
+                }
+            }
+        },
+        "/api/assets/{asset}/qr-code": {
+            "post": {
+                "tags": [
+                    "Assets"
+                ],
+                "summary": "Buat ulang QR code aset (khusus teknik)",
+                "operationId": "assetsRegenerateQrCode",
+                "parameters": [
+                    {
+                        "name": "asset",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "QR code aset berhasil dibuat ulang"
+                    },
+                    "404": {
+                        "description": "Aset tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/assets/{id}/knowledge-summary": {
+            "get": {
+                "tags": [
+                    "Assets"
+                ],
+                "summary": "Ringkasan knowledge aset",
+                "description": "Mengembalikan jumlah knowledge document, knowledge chunks, laporan pemeliharaan, catatan perbaikan, dan jam operasi terbaru untuk satu aset.",
+                "operationId": "assetsKnowledgeSummary",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ringkasan knowledge aset berhasil diambil"
+                    },
+                    "404": {
+                        "description": "Aset tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/assets/{assetId}/recommendation": {
+            "get": {
+                "tags": [
+                    "Recommendation"
+                ],
+                "summary": "Rekomendasi pemeliharaan aset (AI Engine)",
+                "description": "Menyusun konteks aset (jam operasi, histori, RAG chunks) lalu memanggil AI Engine /query/maintenance-recommendation (LLM + Knowledge Graph). Mengembalikan rekomendasi terstruktur per kategori.",
+                "operationId": "assetRecommendation",
+                "parameters": [
+                    {
+                        "name": "assetId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 2
+                    },
+                    {
+                        "name": "top_k",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 5,
+                            "maximum": 10,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "keluhan",
+                        "in": "query",
+                        "description": "Uraian kerusakan/keluhan spesifik (untuk konteks rekomendasi perbaikan)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rekomendasi pemeliharaan berhasil dihasilkan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Rekomendasi pemeliharaan berhasil dihasilkan"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "asset_id": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "context_summary": {
+                                                    "type": "string"
+                                                },
+                                                "categories": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "category": {
+                                                                "type": "string",
+                                                                "example": "Sistem Hidrolik"
+                                                            },
+                                                            "priority": {
+                                                                "type": "string",
+                                                                "example": "high"
+                                                            },
+                                                            "reasoning": {
+                                                                "type": "string"
+                                                            },
+                                                            "action_items": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "ai_note": {
+                                                    "type": "string"
+                                                },
+                                                "special_flag": {
+                                                    "type": "string",
+                                                    "example": "overdue",
+                                                    "nullable": true
+                                                },
+                                                "kg_context": {
+                                                    "type": "object"
+                                                },
+                                                "confidence_score": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 0.82
+                                                },
+                                                "llm_model_used": {
+                                                    "type": "string",
+                                                    "example": "llama-3.3-70b-versatile"
+                                                },
+                                                "latency_ms": {
+                                                    "type": "integer",
+                                                    "example": 1450
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Aset tidak ditemukan"
+                    },
+                    "500": {
+                        "description": "AI Engine error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/chat/ask": {
+            "post": {
+                "tags": [
+                    "Chatbot"
+                ],
+                "summary": "Tanya chatbot RAG (terintegrasi AI Engine)",
+                "description": "Melakukan retrieval (embed query + vector search pgvector) lalu memanggil AI Engine /query/chat (LLM Groq dengan fallback Gemini + Knowledge Graph). Menyimpan ChatHistory & RetrievalLog.",
+                "operationId": "chatAsk",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "question"
+                                ],
+                                "properties": {
+                                    "question": {
+                                        "type": "string",
+                                        "example": "Apa penyebab tegangan genset tidak stabil?"
+                                    },
+                                    "asset_id": {
+                                        "type": "integer",
+                                        "example": 3,
+                                        "nullable": true
+                                    },
+                                    "top_k": {
+                                        "type": "integer",
+                                        "example": 5,
+                                        "nullable": true,
+                                        "maximum": 10,
+                                        "minimum": 1
+                                    },
+                                    "session_id": {
+                                        "type": "string",
+                                        "example": "sess_uji_skripsi_01",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Jawaban berhasil dihasilkan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Jawaban berhasil dihasilkan"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "chat_id": {
+                                                    "type": "integer",
+                                                    "example": 12
+                                                },
+                                                "session_id": {
+                                                    "type": "string",
+                                                    "example": "sess_5_1718000000"
+                                                },
+                                                "question": {
+                                                    "type": "string"
+                                                },
+                                                "answer": {
+                                                    "type": "string"
+                                                },
+                                                "sources": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "quick_replies": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "kg_context": {
+                                                    "type": "object",
+                                                    "nullable": true
+                                                },
+                                                "contexts": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "retrieval_time_ms": {
+                                                    "type": "integer",
+                                                    "example": 85
+                                                },
+                                                "response_time_ms": {
+                                                    "type": "integer",
+                                                    "example": 1450
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/chat/histories": {
+            "get": {
+                "tags": [
+                    "Chatbot"
+                ],
+                "summary": "Daftar riwayat chat (flat)",
+                "description": "Mekanik hanya melihat riwayat miliknya sendiri; teknik melihat semua.",
+                "operationId": "chatHistory",
+                "responses": {
+                    "200": {
+                        "description": "Riwayat chat berhasil diambil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/chat/sessions": {
+            "get": {
+                "tags": [
+                    "Chatbot"
+                ],
+                "summary": "Daftar sesi chat dikelompokkan per session_id",
+                "description": "Mengembalikan sesi percakapan yang dikelompokkan. Setiap sesi berisi metadata (session_id, asset, jumlah pesan, waktu mulai/akhir) dan array messages.",
+                "operationId": "chatSessions",
+                "responses": {
+                    "200": {
+                        "description": "Sesi chat berhasil diambil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/chat/histories/{id}": {
+            "get": {
+                "tags": [
+                    "Chatbot"
+                ],
+                "summary": "Detail riwayat chat",
+                "operationId": "chatShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail riwayat chat berhasil diambil"
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Chatbot"
+                ],
+                "summary": "Hapus riwayat chat",
+                "operationId": "chatDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Riwayat chat berhasil dihapus",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/retrieval-evaluations": {
+            "get": {
+                "tags": [
+                    "Evaluation"
+                ],
+                "summary": "Daftar evaluasi retrieval (khusus teknik)",
+                "operationId": "retrievalEvaluationIndex",
+                "responses": {
+                    "200": {
+                        "description": "Data evaluasi retrieval berhasil diambil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/retrieval-evaluations/{id}": {
+            "get": {
+                "tags": [
+                    "Evaluation"
+                ],
+                "summary": "Detail evaluasi retrieval",
+                "operationId": "retrievalEvaluationShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail evaluasi retrieval berhasil diambil"
+                    },
+                    "404": {
+                        "description": "Tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Evaluation"
+                ],
+                "summary": "Hapus evaluasi retrieval (khusus teknik)",
+                "operationId": "retrievalEvaluationDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Evaluasi retrieval berhasil dihapus",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/retrieval-evaluations/evaluate": {
+            "post": {
+                "tags": [
+                    "Evaluation"
+                ],
+                "summary": "Jalankan evaluasi retrieval (khusus teknik)",
+                "description": "Menghitung context_precision (relevan/total) dan context_recall (biner: 1 jika ada hasil relevan).",
+                "operationId": "retrievalEvaluationEvaluate",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "question",
+                                    "expected_source_type"
+                                ],
+                                "properties": {
+                                    "question": {
+                                        "type": "string",
+                                        "example": "Cara mengganti seal hidrolik?"
+                                    },
+                                    "asset_id": {
+                                        "type": "integer",
+                                        "example": 2,
+                                        "nullable": true
+                                    },
+                                    "expected_source_type": {
+                                        "type": "string",
+                                        "example": "manual_book"
+                                    },
+                                    "expected_source_id": {
+                                        "type": "integer",
+                                        "example": 2,
+                                        "nullable": true
+                                    },
+                                    "top_k": {
+                                        "type": "integer",
+                                        "example": 5,
+                                        "nullable": true,
+                                        "maximum": 10,
+                                        "minimum": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Evaluasi retrieval berhasil dijalankan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "evaluation": {
+                                                    "type": "object"
+                                                },
+                                                "metrics": {
+                                                    "properties": {
+                                                        "context_precision": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 0.6
+                                                        },
+                                                        "context_recall": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 1
+                                                        },
+                                                        "retrieval_time_ms": {
+                                                            "type": "integer",
+                                                            "example": 85
+                                                        },
+                                                        "top_k": {
+                                                            "type": "integer",
+                                                            "example": 5
+                                                        },
+                                                        "relevant_results_count": {
+                                                            "type": "integer",
+                                                            "example": 3
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "retrieved_results": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/ingestion/assets/{asset}/profile": {
+            "post": {
+                "tags": [
+                    "Knowledge"
+                ],
+                "summary": "Ingest profil aset ke knowledge base (khusus teknik)",
+                "description": "Membuat embedding profil aset via AI Engine lalu menyimpannya ke pgvector.",
+                "operationId": "ingestAssetProfile",
+                "parameters": [
+                    {
+                        "name": "asset",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Profil aset berhasil di-ingest"
+                    },
+                    "500": {
+                        "description": "Gagal ingest profil aset"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/ingestion/assets/{asset}/manual-book": {
+            "post": {
+                "tags": [
+                    "Knowledge"
+                ],
+                "summary": "Ingest manual book aset (PDF) ke knowledge base (khusus teknik)",
+                "description": "Mengekstrak teks PDF manual book, membuat embedding via AI Engine, lalu menyimpannya ke pgvector.",
+                "operationId": "ingestAssetManualBook",
+                "parameters": [
+                    {
+                        "name": "asset",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Manual book aset berhasil di-ingest"
+                    },
+                    "500": {
+                        "description": "Gagal ingest manual book aset"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/ingestion/maintenance-reports/{id}": {
+            "post": {
+                "tags": [
+                    "Knowledge"
+                ],
+                "summary": "Ingest laporan pemeliharaan ke knowledge base (khusus teknik)",
+                "operationId": "ingestMaintenanceReport",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Laporan pemeliharaan berhasil di-ingest"
+                    },
+                    "500": {
+                        "description": "Gagal ingest laporan pemeliharaan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/ingestion/repair-reports/{id}": {
+            "post": {
+                "tags": [
+                    "Knowledge"
+                ],
+                "summary": "Ingest catatan perbaikan ke knowledge base (khusus teknik)",
+                "operationId": "ingestRepairReport",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Catatan perbaikan berhasil di-ingest"
+                    },
+                    "500": {
+                        "description": "Gagal ingest catatan perbaikan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/knowledge-documents": {
+            "get": {
+                "tags": [
+                    "Knowledge"
+                ],
+                "summary": "Daftar knowledge document",
+                "operationId": "knowledgeDocumentIndex",
+                "responses": {
+                    "200": {
+                        "description": "Data knowledge document berhasil diambil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/knowledge-documents/{id}": {
+            "get": {
+                "tags": [
+                    "Knowledge"
+                ],
+                "summary": "Detail knowledge document (beserta chunks)",
+                "operationId": "knowledgeDocumentShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail knowledge document berhasil diambil"
+                    },
+                    "404": {
+                        "description": "Tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Knowledge"
+                ],
+                "summary": "Hapus knowledge document (khusus teknik)",
+                "operationId": "knowledgeDocumentDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Knowledge document berhasil dihapus",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/retrieval-logs": {
+            "get": {
+                "tags": [
+                    "Knowledge"
+                ],
+                "summary": "Daftar retrieval log",
+                "description": "Mekanik hanya melihat log miliknya sendiri.",
+                "operationId": "retrievalLogIndex",
+                "responses": {
+                    "200": {
+                        "description": "Data retrieval log berhasil diambil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/retrieval-logs/{id}": {
+            "get": {
+                "tags": [
+                    "Knowledge"
+                ],
+                "summary": "Detail retrieval log",
+                "operationId": "retrievalLogShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail retrieval log berhasil diambil"
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Knowledge"
+                ],
+                "summary": "Hapus retrieval log (khusus teknik)",
+                "operationId": "retrievalLogDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retrieval log berhasil dihapus",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/maintenance-reports": {
+            "get": {
+                "tags": [
+                    "Maintenance Report"
+                ],
+                "summary": "Daftar laporan pemeliharaan",
+                "description": "Mekanik hanya melihat laporan miliknya sendiri.",
+                "operationId": "maintenanceReportIndex",
+                "responses": {
+                    "200": {
+                        "description": "Data laporan pemeliharaan berhasil diambil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Maintenance Report"
+                ],
+                "summary": "Buat laporan pemeliharaan (khusus mekanik)",
+                "description": "Tugas harus milik mekanik yang login, belum completed, jam jalan sesuai aset, dan belum ada laporan untuk tugas tsb.",
+                "operationId": "maintenanceReportStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "maintenance_task_id",
+                                    "operating_hour_id",
+                                    "tanggal_pemeliharaan",
+                                    "catatan_pemeliharaan"
+                                ],
+                                "properties": {
+                                    "maintenance_task_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "operating_hour_id": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "tanggal_pemeliharaan": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-06-10"
+                                    },
+                                    "catatan_pemeliharaan": {
+                                        "type": "string",
+                                        "example": "Ganti oli & filter"
+                                    },
+                                    "bukti_foto": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "llm_suggestion": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Laporan pemeliharaan berhasil dibuat"
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Aturan bisnis dilanggar",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/maintenance-reports/{id}": {
+            "get": {
+                "tags": [
+                    "Maintenance Report"
+                ],
+                "summary": "Detail laporan pemeliharaan",
+                "operationId": "maintenanceReportShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail laporan pemeliharaan berhasil diambil"
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Maintenance Report"
+                ],
+                "summary": "Perbarui laporan pemeliharaan",
+                "operationId": "maintenanceReportUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "operating_hour_id",
+                                    "tanggal_pemeliharaan",
+                                    "catatan_pemeliharaan"
+                                ],
+                                "properties": {
+                                    "operating_hour_id": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "tanggal_pemeliharaan": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-06-10"
+                                    },
+                                    "catatan_pemeliharaan": {
+                                        "type": "string"
+                                    },
+                                    "bukti_foto": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "llm_suggestion": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Laporan pemeliharaan berhasil diperbarui"
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Aturan bisnis dilanggar",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Maintenance Report"
+                ],
+                "summary": "Hapus laporan pemeliharaan",
+                "operationId": "maintenanceReportDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Laporan pemeliharaan berhasil dihapus",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/operating-hours": {
+            "get": {
+                "tags": [
+                    "Operating Hour"
+                ],
+                "summary": "Daftar data jam jalan",
+                "operationId": "operatingHourIndex",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Operating Hour"
+                ],
+                "summary": "Catat jam jalan aset (khusus mekanik)",
+                "operationId": "operatingHourStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "asset_id",
+                                    "tanggal",
+                                    "jam_jalan"
+                                ],
+                                "properties": {
+                                    "asset_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "tanggal": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-06-10"
+                                    },
+                                    "jam_jalan": {
+                                        "type": "integer",
+                                        "example": 1200
+                                    },
+                                    "keterangan": {
+                                        "type": "string",
+                                        "example": "Kondisi mesin normal",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Data jam jalan berhasil dibuat"
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/operating-hours/{id}": {
+            "get": {
+                "tags": [
+                    "Operating Hour"
+                ],
+                "summary": "Detail jam jalan",
+                "operationId": "operatingHourShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail jam jalan berhasil diambil"
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Operating Hour"
+                ],
+                "summary": "Perbarui jam jalan",
+                "operationId": "operatingHourUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "asset_id",
+                                    "tanggal",
+                                    "jam_jalan"
+                                ],
+                                "properties": {
+                                    "asset_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "tanggal": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-06-10"
+                                    },
+                                    "jam_jalan": {
+                                        "type": "integer",
+                                        "example": 1300
+                                    },
+                                    "keterangan": {
+                                        "type": "string",
+                                        "example": "Kondisi mesin normal",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Data jam jalan berhasil diperbarui"
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Operating Hour"
+                ],
+                "summary": "Hapus jam jalan",
+                "operationId": "operatingHourDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data jam jalan berhasil dihapus",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/repair-reports": {
+            "get": {
+                "tags": [
+                    "Repair Report"
+                ],
+                "summary": "Daftar catatan perbaikan",
+                "description": "Mekanik hanya melihat catatan miliknya sendiri.",
+                "operationId": "repairReportIndex",
+                "responses": {
+                    "200": {
+                        "description": "Data catatan perbaikan berhasil diambil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Repair Report"
+                ],
+                "summary": "Buat catatan perbaikan (khusus mekanik)",
+                "description": "Pengajuan harus milik mekanik & berstatus approved, belum ada catatan, jam jalan sesuai aset.",
+                "operationId": "repairReportStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "repair_request_id",
+                                    "operating_hour_id",
+                                    "tanggal_perbaikan",
+                                    "catatan_temuan",
+                                    "cara_perbaikan"
+                                ],
+                                "properties": {
+                                    "repair_request_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "operating_hour_id": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "tanggal_perbaikan": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-06-10"
+                                    },
+                                    "catatan_temuan": {
+                                        "type": "string",
+                                        "example": "Bearing aus"
+                                    },
+                                    "cara_perbaikan": {
+                                        "type": "string",
+                                        "example": "Ganti bearing baru"
+                                    },
+                                    "bukti_foto": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "llm_suggestion": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Catatan perbaikan berhasil dibuat"
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Aturan bisnis dilanggar",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/repair-reports/{id}": {
+            "get": {
+                "tags": [
+                    "Repair Report"
+                ],
+                "summary": "Detail catatan perbaikan",
+                "operationId": "repairReportShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail catatan perbaikan berhasil diambil"
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Repair Report"
+                ],
+                "summary": "Perbarui catatan perbaikan",
+                "operationId": "repairReportUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "operating_hour_id",
+                                    "tanggal_perbaikan",
+                                    "catatan_temuan",
+                                    "cara_perbaikan"
+                                ],
+                                "properties": {
+                                    "operating_hour_id": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "tanggal_perbaikan": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-06-10"
+                                    },
+                                    "catatan_temuan": {
+                                        "type": "string"
+                                    },
+                                    "cara_perbaikan": {
+                                        "type": "string"
+                                    },
+                                    "bukti_foto": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "llm_suggestion": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Catatan perbaikan berhasil diperbarui"
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Aturan bisnis dilanggar",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Repair Report"
+                ],
+                "summary": "Hapus catatan perbaikan",
+                "operationId": "repairReportDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Catatan perbaikan berhasil dihapus",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/repair-requests": {
+            "get": {
+                "tags": [
+                    "Repair Request"
+                ],
+                "summary": "Daftar pengajuan perbaikan",
+                "description": "Mekanik hanya melihat pengajuan miliknya sendiri.",
+                "operationId": "repairRequestIndex",
+                "responses": {
+                    "200": {
+                        "description": "Data pengajuan perbaikan berhasil diambil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Repair Request"
+                ],
+                "summary": "Buat pengajuan perbaikan (khusus mekanik)",
+                "operationId": "repairRequestStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "asset_id",
+                                    "kondisi_perbaikan",
+                                    "catatan_kerusakan"
+                                ],
+                                "properties": {
+                                    "asset_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "kondisi_perbaikan": {
+                                        "type": "string",
+                                        "example": "sedang",
+                                        "enum": [
+                                            "ringan",
+                                            "sedang",
+                                            "berat"
+                                        ]
+                                    },
+                                    "catatan_kerusakan": {
+                                        "type": "string",
+                                        "example": "Seal bocor pada silinder"
+                                    },
+                                    "bukti_foto": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Pengajuan perbaikan berhasil dibuat"
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/repair-requests/{id}": {
+            "get": {
+                "tags": [
+                    "Repair Request"
+                ],
+                "summary": "Detail pengajuan perbaikan",
+                "operationId": "repairRequestShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail pengajuan perbaikan berhasil diambil"
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Repair Request"
+                ],
+                "summary": "Perbarui pengajuan perbaikan (hanya saat status pending)",
+                "operationId": "repairRequestUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "asset_id",
+                                    "kondisi_perbaikan",
+                                    "catatan_kerusakan"
+                                ],
+                                "properties": {
+                                    "asset_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "kondisi_perbaikan": {
+                                        "type": "string",
+                                        "example": "berat",
+                                        "enum": [
+                                            "ringan",
+                                            "sedang",
+                                            "berat"
+                                        ]
+                                    },
+                                    "catatan_kerusakan": {
+                                        "type": "string"
+                                    },
+                                    "bukti_foto": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pengajuan perbaikan berhasil diperbarui"
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Sudah diverifikasi / validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Repair Request"
+                ],
+                "summary": "Hapus pengajuan perbaikan (hanya saat status pending)",
+                "operationId": "repairRequestDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pengajuan perbaikan berhasil dihapus",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Bukan milik Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Sudah diverifikasi"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/repair-requests/{id}/verify": {
+            "patch": {
+                "tags": [
+                    "Repair Request"
+                ],
+                "summary": "Verifikasi pengajuan perbaikan (khusus teknik)",
+                "description": "Hanya pengajuan berstatus pending yang bisa diverifikasi menjadi approved/rejected.",
+                "operationId": "repairRequestVerify",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status_verifikasi"
+                                ],
+                                "properties": {
+                                    "status_verifikasi": {
+                                        "type": "string",
+                                        "example": "approved",
+                                        "enum": [
+                                            "approved",
+                                            "rejected"
+                                        ]
+                                    },
+                                    "catatan_verifikasi": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status pengajuan perbaikan berhasil diverifikasi"
+                    },
+                    "422": {
+                        "description": "Sudah diverifikasi / validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/maintenance-tasks": {
+            "get": {
+                "tags": [
+                    "Maintenance Task"
+                ],
+                "summary": "Daftar tugas pemeliharaan",
+                "description": "Mekanik hanya melihat tugas yang di-assign kepadanya.",
+                "operationId": "maintenanceTaskIndex",
+                "responses": {
+                    "200": {
+                        "description": "Data tugas pemeliharaan berhasil diambil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Maintenance Task"
+                ],
+                "summary": "Buat tugas pemeliharaan (khusus teknik)",
+                "description": "assigned_to harus user dengan role mekanik. Status awal otomatis \"assigned\".",
+                "operationId": "maintenanceTaskStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "asset_id",
+                                    "assigned_to",
+                                    "tanggal_tugas"
+                                ],
+                                "properties": {
+                                    "asset_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "assigned_to": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "tanggal_tugas": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-06-12"
+                                    },
+                                    "target_jam_jalan": {
+                                        "type": "integer",
+                                        "example": 2000,
+                                        "nullable": true
+                                    },
+                                    "catatan_tugas": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Tugas pemeliharaan berhasil dibuat"
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/maintenance-tasks/{id}": {
+            "get": {
+                "tags": [
+                    "Maintenance Task"
+                ],
+                "summary": "Detail tugas pemeliharaan",
+                "operationId": "maintenanceTaskShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail tugas pemeliharaan berhasil diambil"
+                    },
+                    "403": {
+                        "description": "Bukan tugas Anda",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Maintenance Task"
+                ],
+                "summary": "Perbarui tugas pemeliharaan (khusus teknik)",
+                "operationId": "maintenanceTaskUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "asset_id",
+                                    "assigned_to",
+                                    "tanggal_tugas"
+                                ],
+                                "properties": {
+                                    "asset_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "assigned_to": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "tanggal_tugas": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-06-12"
+                                    },
+                                    "target_jam_jalan": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "catatan_tugas": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "enum": [
+                                            "assigned",
+                                            "in_progress",
+                                            "submitted",
+                                            "completed",
+                                            "cancelled"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Tugas pemeliharaan berhasil diperbarui"
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Maintenance Task"
+                ],
+                "summary": "Hapus tugas pemeliharaan (khusus teknik)",
+                "operationId": "maintenanceTaskDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tugas pemeliharaan berhasil dihapus",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Tugas tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/maintenance-tasks/{id}/status": {
+            "patch": {
+                "tags": [
+                    "Maintenance Task"
+                ],
+                "summary": "Ubah status tugas pemeliharaan",
+                "description": "Mekanik tidak dapat menyetel status ke completed/cancelled.",
+                "operationId": "maintenanceTaskUpdateStatus",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "example": "in_progress",
+                                        "enum": [
+                                            "assigned",
+                                            "in_progress",
+                                            "submitted",
+                                            "completed",
+                                            "cancelled"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status tugas pemeliharaan berhasil diperbarui"
+                    },
+                    "403": {
+                        "description": "Tidak diizinkan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/maintenance-due-assets": {
+            "get": {
+                "tags": [
+                    "Maintenance Task"
+                ],
+                "summary": "Daftar aset yang jatuh tempo pemeliharaan (khusus teknik)",
+                "description": "Membandingkan selisih jam jalan terbaru dengan jam jalan saat pemeliharaan terakhir terhadap interval pemeliharaan aset.",
+                "operationId": "maintenanceDueAssets",
+                "responses": {
+                    "200": {
+                        "description": "Data aset yang perlu maintenance berhasil diambil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/mekanik": {
+            "get": {
+                "tags": [
+                    "Mekanik - Akun"
+                ],
+                "summary": "Daftar akun mekanik (khusus teknik)",
+                "operationId": "mekanikIndex",
+                "responses": {
+                    "200": {
+                        "description": "Data mekanik berhasil diambil"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Mekanik - Akun"
+                ],
+                "summary": "Buat akun mekanik (khusus teknik)",
+                "operationId": "mekanikStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "username",
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Andi Mekanik"
+                                    },
+                                    "username": {
+                                        "type": "string",
+                                        "example": "mekanik_02"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "mekanik02@pabrik.com"
+                                    },
+                                    "no_telp": {
+                                        "type": "string",
+                                        "example": "08123456789",
+                                        "nullable": true
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Data mekanik berhasil dibuat"
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/mekanik/{id}": {
+            "get": {
+                "tags": [
+                    "Mekanik - Akun"
+                ],
+                "summary": "Detail akun mekanik",
+                "operationId": "mekanikShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail mekanik berhasil diambil"
+                    },
+                    "404": {
+                        "description": "Mekanik tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Mekanik - Akun"
+                ],
+                "summary": "Perbarui akun mekanik",
+                "description": "Password opsional; kosongkan untuk mempertahankan password lama.",
+                "operationId": "mekanikUpdate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "username",
+                                    "email"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Andi Mekanik"
+                                    },
+                                    "username": {
+                                        "type": "string",
+                                        "example": "mekanik_02"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "mekanik02@pabrik.com"
+                                    },
+                                    "no_telp": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Data mekanik berhasil diperbarui"
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Mekanik - Akun"
+                ],
+                "summary": "Hapus akun mekanik",
+                "operationId": "mekanikDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data mekanik berhasil dihapus",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Mekanik tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerSanctum": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "MessageResponse": {
+                "properties": {
+                    "message": {
+                        "description": "Definisi dasar dokumentasi OpenAPI/Swagger untuk AssetMind Backend API.\n\nMemakai PHP 8 Attributes (didukung swagger-php v6).\nAnotasi path tersebar di controller masing-masing.",
+                        "type": "string",
+                        "example": "Operasi berhasil"
+                    }
+                },
+                "type": "object"
+            },
+            "ValidationError": {
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "The given data was invalid."
+                    },
+                    "errors": {
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "ForbiddenError": {
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Forbidden. Data ini bukan milik Anda."
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "bearerSanctum": {
+                "type": "http",
+                "description": "Masukkan token Sanctum dari endpoint /auth/login (tanpa kata 'Bearer').",
+                "bearerFormat": "Sanctum",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "Autentikasi & token"
+        },
+        {
+            "name": "Assets",
+            "description": "Manajemen aset (teknik) & pembacaan (bersama)"
+        },
+        {
+            "name": "Chatbot",
+            "description": "Chatbot RAG terintegrasi AI Engine"
+        },
+        {
+            "name": "Recommendation",
+            "description": "Rekomendasi pemeliharaan dari AI Engine"
+        },
+        {
+            "name": "Mekanik - Akun",
+            "description": "CRUD akun mekanik (khusus teknik)"
+        },
+        {
+            "name": "Maintenance Task",
+            "description": "Tugas pemeliharaan"
+        },
+        {
+            "name": "Operating Hour",
+            "description": "Pencatatan jam jalan aset"
+        },
+        {
+            "name": "Maintenance Report",
+            "description": "Laporan pemeliharaan"
+        },
+        {
+            "name": "Repair Request",
+            "description": "Pengajuan perbaikan"
+        },
+        {
+            "name": "Repair Report",
+            "description": "Catatan perbaikan"
+        },
+        {
+            "name": "Knowledge",
+            "description": "Knowledge document & ingestion RAG"
+        },
+        {
+            "name": "Evaluation",
+            "description": "Evaluasi retrieval (precision/recall)"
+        }
+    ]
+}

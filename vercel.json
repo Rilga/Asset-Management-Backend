@@ -1,0 +1,45 @@
+{
+  "version": 2,
+  "framework": null,
+  "functions": {
+    "api/index.php": {
+      "runtime": "vercel-php@0.7.2"
+    }
+  },
+  "routes": [
+    { "src": "/build/(.*)", "dest": "/public/build/$1" },
+    { "src": "/assets/(.*)", "dest": "/public/assets/$1" },
+    { "src": "/images/(.*)", "dest": "/public/images/$1" },
+    { "src": "/favicon.ico", "dest": "/public/favicon.ico" },
+    { "src": "/robots.txt", "dest": "/public/robots.txt" },
+    { "src": "/(.*)", "dest": "/api/index.php" }
+  ],
+  "env": {
+    "APP_ENV": "production",
+    "APP_DEBUG": "false",
+    "APP_URL": "http://localhost:8000",
+    "APP_KEY": "base64:k5Op3keMXfskcT368mtkSP7fMBSoMVS4BuCG1IM/+0g=",
+    "APP_CONFIG_CACHE": "/tmp/config.php",
+    "APP_EVENTS_CACHE": "/tmp/events.php",
+    "APP_PACKAGES_CACHE": "/tmp/packages.php",
+    "APP_ROUTES_CACHE": "/tmp/routes.php",
+    "APP_SERVICES_CACHE": "/tmp/services.php",
+    "VIEW_COMPILED_PATH": "/tmp",
+    "CACHE_DRIVER": "array",
+    "LOG_CHANNEL": "stderr",
+    "SESSION_DRIVER": "cookie",
+    "DB_CONNECTION": "pgsql",
+    "DB_HOST": "ep-proud-boat-ao8wdaxg.c-2.ap-southeast-1.aws.neon.tech",
+    "DB_PORT": "5432",
+    "DB_DATABASE": "neondb",
+    "DB_USERNAME": "neondb_owner",
+    "DB_PASSWORD": "npg_nxBSpvy23rOH",
+    "DB_SSLMODE": "require",
+    "SUPABASE_URL": "https://fuwvygbwtgcaxfnbsksk.supabase.co",
+    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1d3Z5Z2J3dGdjYXhmbmJza3NrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDk3NTcyNiwiZXhwIjoyMDk2NTUxNzI2fQ.J9PTmw6BtXDFQRV7NQPG7pTIeuJPQFGsdEHqY02AQYE",
+    "SUPABASE_BUCKET": "manual-books",
+    "SUPABASE_SSL_VERIFY": "false",
+    "PYTHON_AI_BASE_URL": "http://localhost:5000",
+    "AI_ENGINE_API_KEY": "TPuV_hZm2Z77td_3P00hzRuiMySiiCXMGguSlbu_OYFaXUb1Is56t94eQeQp2d4b"
+  }
+}
