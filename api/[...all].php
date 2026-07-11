@@ -8,7 +8,9 @@ require __DIR__ . '/../vendor/autoload.php';
  */
 
 $path = null;
-if (isset($_SERVER['PATH_INFO'])) {
+if (isset($_GET['path']) && is_string($_GET['path'])) {
+    $path = '/' . trim($_GET['path'], '/');
+} elseif (isset($_SERVER['PATH_INFO'])) {
     $path = $_SERVER['PATH_INFO'];
 } elseif (isset($_SERVER['REQUEST_URI'])) {
     $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: null;
