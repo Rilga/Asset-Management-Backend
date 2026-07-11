@@ -10,7 +10,7 @@ require __DIR__ . '/../vendor/autoload.php';
 $path = null;
 if (isset($_GET['path']) && is_string($_GET['path'])) {
     $path = '/' . trim($_GET['path'], '/');
-} elseif (isset($_SERVER['PATH_INFO'])) {
+} elseif (isset($_SERVER['PATH_INFO']) && $_SERVER['PATH_INFO'] !== '') {
     $path = $_SERVER['PATH_INFO'];
 } elseif (isset($_SERVER['REQUEST_URI'])) {
     $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: null;
@@ -26,6 +26,8 @@ if ($path !== null) {
     $_SERVER['PHP_SELF'] = '/api/[...all].php';
     $_SERVER['SCRIPT_NAME'] = '/api/[...all].php';
     $_SERVER['SCRIPT_FILENAME'] = __DIR__ . '/[...all].php';
+    $_SERVER['ORIG_PATH_INFO'] = $_SERVER['PATH_INFO'];
+    $_SERVER['ORIG_SCRIPT_NAME'] = $_SERVER['SCRIPT_NAME'];
 }
 
 $app = require_once __DIR__ . '/../bootstrap/app.php';
