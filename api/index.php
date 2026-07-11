@@ -1,29 +1,36 @@
 <?php
 
-require __DIR__ . '/../vendor/autoload.php';
-
 /**
- * Laravel on Vercel expects the same request lifecycle as public/index.php.
- * This entrypoint restores the original API request path when Vercel
- * rewrites /api/:path* to this single function entrypoint.
+ * Vercel executes this file for every API request. Its rewrite changes the
+ * physical script to /api/index.php, so restore the original API URI before
+ * Laravel builds its request.
+ *
+ * SCRIPT_NAME must remain rooted at /index.php. If it is set to
+ * /api/index.php, Symfony treats /api as the application's base path and
+ * Laravel tries to match /auth/login instead of /api/auth/login.
  */
 
-$path = null;
-if (isset($_GET['path']) && is_string($_GET['path'])) {
-    $path = '/' . trim($_GET['path'], '/');
+$path = $_GET['path'] ?? $_GET['__api_path'] ?? null;
+if (is_string($path)) {
+    $path = '/'.trim($path, '/');
 }
 
-if ($path !== null) {
+if (is_string($path)) {
     if (!str_starts_with($path, '/api')) {
         $path = '/api' . ($path === '/' ? '' : $path);
     }
 
+    // `path` is only a Vercel routing parameter; it is not part of the API
+    // request that Laravel should receive.
+    unset($_GET['path'], $_GET['__api_path']);
+    $query = http_build_query($_GET);
+
     $_SERVER['PATH_INFO'] = $path;
-    $_SERVER['REQUEST_URI'] = $path . (isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== '' ? '?' . $_SERVER['QUERY_STRING'] : '');
-    $_SERVER['PHP_SELF'] = '/api/index.php';
-    $_SERVER['SCRIPT_NAME'] = '/api/index.php';
-    $_SERVER['SCRIPT_FILENAME'] = __DIR__ . '/index.php';
+    $_SERVER['REQUEST_URI'] = $path . ($query !== '' ? '?'.$query : '');
+    $_SERVER['QUERY_STRING'] = $query;
+    $_SERVER['PHP_SELF'] = '/index.php';
+    $_SERVER['SCRIPT_NAME'] = '/index.php';
+    $_SERVER['SCRIPT_FILENAME'] = dirname(__DIR__).'/public/index.php';
 }
 
-$app = require_once __DIR__ . '/../bootstrap/app.php';
-$app->handleRequest(Illuminate\Http\Request::capture());
+require dirname(__DIR__).'/public/index.php';

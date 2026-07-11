@@ -12,8 +12,8 @@
     { "src": "/images/(.*)", "dest": "/public/images/$1" },
     { "src": "/favicon.ico", "dest": "/public/favicon.ico" },
     { "src": "/robots.txt", "dest": "/public/robots.txt" },
-    { "src": "/api/(.*)", "dest": "/api/index.php?path=$1" },
-    { "src": "/api", "dest": "/api/index.php" }
+    { "src": "/api/(.*)", "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], "dest": "/api/index.php?path=$1" },
+    { "src": "/api", "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], "dest": "/api/index.php" }
   ],
   "env": {
     "APP_ENV": "production",
