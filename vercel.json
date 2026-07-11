@@ -2,7 +2,7 @@
   "version": 2,
   "framework": null,
   "functions": {
-    "api/[...all].php": {
+    "api/index.php": {
       "runtime": "vercel-php@0.7.2"
     }
   },
@@ -12,8 +12,8 @@
     { "src": "/images/(.*)", "dest": "/public/images/$1" },
     { "src": "/favicon.ico", "dest": "/public/favicon.ico" },
     { "src": "/robots.txt", "dest": "/public/robots.txt" },
-    { "src": "/api/(.*)", "dest": "/api/[...all].php?path=$1" },
-    { "src": "/api", "dest": "/api/[...all].php" }
+    { "src": "/api/(.*)", "dest": "/api/index.php?path=$1" },
+    { "src": "/api", "dest": "/api/index.php" }
   ],
   "env": {
     "APP_ENV": "production",
