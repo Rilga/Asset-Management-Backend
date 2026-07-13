@@ -36,6 +36,27 @@ class SupabaseStorageService
         return $filename;
     }
 
+    public function uploadQrCode(string $svg, int $assetId): string
+    {
+        $bucket = config('services.supabase.bucket');
+        $baseUrl = rtrim(config('services.supabase.url'), '/');
+        $path = "qr-codes/asset-{$assetId}.svg";
+
+        $response = $this->http()
+            ->withHeaders([
+                'Content-Type' => 'image/svg+xml',
+                'x-upsert' => 'true',
+            ])
+            ->withBody($svg, 'image/svg+xml')
+            ->post("{$baseUrl}/storage/v1/object/{$bucket}/{$path}");
+
+        if (!$response->successful()) {
+            throw new RuntimeException('Gagal upload QR code ke Supabase: ' . $response->body());
+        }
+
+        return $path;
+    }
+
     public function download(string $path): string
     {
         $bucket = config('services.supabase.bucket');

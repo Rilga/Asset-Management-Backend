@@ -47,9 +47,12 @@ class Asset extends Model
 
     public function getQrCodeUrlAttribute()
     {
-        return $this->qr_code_path
-            ? asset('storage/' . $this->qr_code_path)
-            : null;
+        if (!$this->qr_code_path) return null;
+
+        $baseUrl = rtrim(config('services.supabase.url'), '/');
+        $bucket = config('services.supabase.bucket');
+
+        return "{$baseUrl}/storage/v1/object/public/{$bucket}/{$this->qr_code_path}";
     }
 
     public function getFotoKondisiUrlAttribute(): ?string

@@ -276,7 +276,7 @@ class AssetController extends Controller
         }
 
         if ($asset->qr_code_path) {
-            Storage::disk('public')->delete($asset->qr_code_path);
+            $this->supabaseStorageService->delete($asset->qr_code_path);
         }
 
         // Hapus knowledge document milik asset.
@@ -371,15 +371,12 @@ class AssetController extends Controller
 
     private function generateQrCode(Asset $asset): void
     {
-        $path = 'assets/qrcodes/asset-' . $asset->id . '.svg';
+        $svg = QrCode::format('svg')
+            ->size(300)
+            ->margin(2)
+            ->generate(route('assets.qr-detail', $asset));
 
-        Storage::disk('public')->put(
-            $path,
-            QrCode::format('svg')
-                ->size(300)
-                ->margin(2)
-                ->generate(route('assets.qr-detail', $asset))
-        );
+        $path = $this->supabaseStorageService->uploadQrCode($svg, $asset->id);
 
         $asset->update([
             'qr_code_path' => $path,
