@@ -90,28 +90,51 @@ class AssetController extends Controller
             'manual_book' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
         ]);
 
-        if ($request->hasFile('foto_kondisi')) {
-            $validated['foto_kondisi'] = $request->file('foto_kondisi')
-                ->store('assets/foto-kondisi', 'public');
+        $stage = 'menyimpan foto kondisi';
+        $asset = null;
+
+        try {
+            if ($request->hasFile('foto_kondisi')) {
+                $validated['foto_kondisi'] = $request->file('foto_kondisi')
+                    ->store('assets/foto-kondisi', 'public');
+            }
+
+            $stage = 'mengunggah manual book ke Supabase';
+            if ($request->hasFile('manual_book')) {
+                $validated['manual_book'] = $this->supabaseStorageService
+                    ->uploadPdf($request->file('manual_book'));
+            }
+
+            $stage = 'menyimpan data aset ke database';
+            $validated['created_by'] = Auth::id();
+            $asset = Asset::create($validated);
+
+            $stage = 'membuat QR code aset';
+            $this->generateQrCode($asset);
+
+            $stage = 'menyegarkan data aset';
+            $asset->refresh();
+            $this->autoIngestAsset($asset);
+            $asset->refresh();
+
+            return response()->json([
+                'message' => 'Data aset berhasil dibuat',
+                'data' => $asset
+            ], 201);
+        } catch (Throwable $e) {
+            Log::error('Pembuatan aset gagal', [
+                'stage' => $stage,
+                'asset_id' => $asset?->id,
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+                'has_foto_kondisi' => $request->hasFile('foto_kondisi'),
+                'has_manual_book' => $request->hasFile('manual_book'),
+            ]);
+
+            return response()->json([
+                'message' => 'Gagal membuat aset. Silakan coba lagi atau hubungi administrator.',
+            ], 500);
         }
-
-        if ($request->hasFile('manual_book')) {
-            $validated['manual_book'] = $this->supabaseStorageService
-                ->uploadPdf($request->file('manual_book'));
-        }
-
-        $validated['created_by'] = Auth::id();
-
-        $asset = Asset::create($validated);
-        $this->generateQrCode($asset);
-        $asset->refresh();
-        $this->autoIngestAsset($asset);
-        $asset->refresh();
-
-        return response()->json([
-            'message' => 'Data aset berhasil dibuat',
-            'data' => $asset
-        ], 201);
     }
 
     #[OA\Get(
