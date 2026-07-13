@@ -41,6 +41,7 @@
     "SUPABASE_BUCKET": "manual-books",
     "SUPABASE_SSL_VERIFY": "false",
     "PYTHON_AI_BASE_URL": "http://localhost:5000",
+    "FRONTEND_URL=": "https://cmms-fawn.vercel.app/",
     "AI_ENGINE_API_KEY": "TPuV_hZm2Z77td_3P00hzRuiMySiiCXMGguSlbu_OYFaXUb1Is56t94eQeQp2d4b"
   }
 }

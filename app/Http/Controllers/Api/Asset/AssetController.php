@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Asset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Services\Rag\KnowledgeIngestionService;
@@ -95,8 +94,8 @@ class AssetController extends Controller
 
         try {
             if ($request->hasFile('foto_kondisi')) {
-                $validated['foto_kondisi'] = $request->file('foto_kondisi')
-                    ->store('assets/foto-kondisi', 'public');
+                $validated['foto_kondisi'] = $this->supabaseStorageService
+                    ->uploadImage($request->file('foto_kondisi'));
             }
 
             $stage = 'mengunggah manual book ke Supabase';
@@ -219,11 +218,11 @@ class AssetController extends Controller
 
         if ($request->hasFile('foto_kondisi')) {
             if ($asset->foto_kondisi) {
-                Storage::disk('public')->delete($asset->foto_kondisi);
+                $this->supabaseStorageService->delete($asset->foto_kondisi);
             }
 
-            $validated['foto_kondisi'] = $request->file('foto_kondisi')
-                ->store('assets/foto-kondisi', 'public');
+            $validated['foto_kondisi'] = $this->supabaseStorageService
+                ->uploadImage($request->file('foto_kondisi'));
         }
 
         if ($request->hasFile('manual_book')) {
@@ -268,7 +267,7 @@ class AssetController extends Controller
         $asset = Asset::findOrFail($id);
 
         if ($asset->foto_kondisi) {
-            Storage::disk('public')->delete($asset->foto_kondisi);
+            $this->supabaseStorageService->delete($asset->foto_kondisi);
         }
 
         if ($asset->manual_book) {

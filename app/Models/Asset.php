@@ -57,9 +57,12 @@ class Asset extends Model
 
     public function getFotoKondisiUrlAttribute(): ?string
     {
-        return $this->foto_kondisi
-            ? asset('storage/' . $this->foto_kondisi)
-            : null;
+        if (!$this->foto_kondisi) return null;
+
+        $baseUrl = rtrim(config('services.supabase.url'), '/');
+        $bucket = config('services.supabase.bucket');
+
+        return "{$baseUrl}/storage/v1/object/public/{$bucket}/{$this->foto_kondisi}";
     }
 
     public function getManualBookUrlAttribute(): ?string

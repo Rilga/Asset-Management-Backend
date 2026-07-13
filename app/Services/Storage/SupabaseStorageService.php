@@ -16,6 +16,16 @@ class SupabaseStorageService
 
     public function uploadPdf(UploadedFile $file, string $folder = 'manual-books'): string
     {
+        return $this->upload($file, $folder);
+    }
+
+    public function uploadImage(UploadedFile $file, string $folder = 'assets/foto-kondisi'): string
+    {
+        return $this->upload($file, $folder);
+    }
+
+    private function upload(UploadedFile $file, string $folder): string
+    {
         $bucket = config('services.supabase.bucket');
         $baseUrl = rtrim(config('services.supabase.url'), '/');
 
@@ -30,7 +40,7 @@ class SupabaseStorageService
             ->post("{$baseUrl}/storage/v1/object/{$bucket}/{$filename}");
 
         if (!$response->successful()) {
-            throw new RuntimeException('Gagal upload PDF ke Supabase: ' . $response->body());
+            throw new RuntimeException('Gagal upload file ke Supabase: ' . $response->body());
         }
 
         return $filename;
