@@ -40,7 +40,7 @@
     "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1d3Z5Z2J3dGdjYXhmbmJza3NrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDk3NTcyNiwiZXhwIjoyMDk2NTUxNzI2fQ.J9PTmw6BtXDFQRV7NQPG7pTIeuJPQFGsdEHqY02AQYE",
     "SUPABASE_BUCKET": "manual-books",
     "SUPABASE_SSL_VERIFY": "false",
-    "PYTHON_AI_BASE_URL": "http://localhost:5000",
+    "PYTHON_AI_BASE_URL": "http://localhost:5001",
     "FRONTEND_URL": "https://cmms-fawn.vercel.app",
     "AI_ENGINE_API_KEY": "TPuV_hZm2Z77td_3P00hzRuiMySiiCXMGguSlbu_OYFaXUb1Is56t94eQeQp2d4b"
   }
